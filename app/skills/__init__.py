@@ -1,0 +1,2 @@
+from .text_extraction.router import extract_text_and_metadata
+from .text_extraction.router import log_memory_usage

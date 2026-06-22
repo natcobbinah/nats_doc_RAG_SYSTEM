@@ -1,0 +1,2 @@
+This is a dummy text file used to test the TXT extractor.
+It contains a second line so the example has real content.
