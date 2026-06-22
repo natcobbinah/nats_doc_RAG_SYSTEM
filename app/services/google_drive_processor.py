@@ -1,125 +1,115 @@
-import os.path
+import io
+import os
+from typing import Dict
+
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseUpload
 
-rag_system_credentials = os.path.abspath(
-        os.path.join(
-          os.path.dirname(__file__), '../../desktop_ragsystem.json')
-    )
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+CREDENTIALS_PATH = os.path.join(BASE_DIR, "desktop_ragsystem.json")
+TOKEN_PATH = os.path.join(os.path.dirname(__file__), "token.json")
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
+# Drive write scope is required for creating folders and uploading thumbnails.
+SCOPES = ["https://www.googleapis.com/auth/drive"]
 
 
-def main():
-  """Shows basic usage of the Drive v3 API.
-  Prints the names and ids of the first 10 files the user has access to.
-  """
+def _escape_query_value(value: str) -> str:
+  return value.replace("'", "\\'")
+
+
+def _get_credentials() -> Credentials:
   creds = None
-  # The file token.json stores the user's access and refresh tokens, and is
-  # created automatically when the authorization flow completes for the first
-  # time.
-  if os.path.exists("token.json"):
-    creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-  # If there are no (valid) credentials available, let the user log in.
+
+  if os.path.exists(TOKEN_PATH):
+    creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+
   if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
       creds.refresh(Request())
     else:
-      flow = InstalledAppFlow.from_client_secrets_file(
-         rag_system_credentials, SCOPES
-      )
+      flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
       creds = flow.run_local_server(port=0)
-    # Save the credentials for the next run
-    with open("token.json", "w") as token:
-      token.write(creds.to_json())
 
+    with open(TOKEN_PATH, "w", encoding="utf-8") as token_file:
+      token_file.write(creds.to_json())
+
+  return creds
+
+
+def get_drive_service():
+  creds = _get_credentials()
+  return build("drive", "v3", credentials=creds)
+
+
+def get_or_create_folder(service, folder_name: str) -> str:
+  safe_folder_name = _escape_query_value(folder_name)
+  query = (
+    "mimeType='application/vnd.google-apps.folder' "
+    f"and name='{safe_folder_name}' and trashed=false"
+  )
+
+  response = service.files().list(q=query, spaces="drive", fields="files(id, name)").execute()
+  files = response.get("files", [])
+  if files:
+    return files[0]["id"]
+
+  folder_metadata = {
+    "name": folder_name,
+    "mimeType": "application/vnd.google-apps.folder",
+  }
+  created = service.files().create(body=folder_metadata, fields="id").execute()
+  return created["id"]
+
+
+def build_drive_file_url(file_id: str) -> str:
+  return f"https://drive.google.com/file/d/{file_id}/view?usp=drive_link"
+
+
+def upload_bytes_to_drive(
+  *,
+  file_bytes: bytes,
+  filename: str,
+  mime_type: str,
+  folder_name: str,
+) -> Dict[str, str]:
   try:
-    service = build("drive", "v3", credentials=creds)
+    service = get_drive_service()
+    folder_id = get_or_create_folder(service, folder_name)
 
-    # Call the Drive v3 API
-    results = (
-        service.files()
-        .list(pageSize=10, fields="nextPageToken, files(id, name)")
-        .execute()
+    media = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype=mime_type, resumable=False)
+    file_metadata = {
+      "name": filename,
+      "parents": [folder_id],
+    }
+
+    created = (
+      service.files()
+      .create(
+        body=file_metadata,
+        media_body=media,
+        fields="id, name, webViewLink, webContentLink",
+      )
+      .execute()
     )
-    items = results.get("files", [])
 
-    if not items:
-      print("No files found.")
-      return
-    print("Files:")
-    for item in items:
-      print(f"{item['name']} ({item['id']})")
+    file_id = created["id"]
+
+    # Ensure returned URL can be accessed without authentication.
+    service.permissions().create(
+      fileId=file_id,
+      body={"type": "anyone", "role": "reader"},
+    ).execute()
+
+    url = created.get("webViewLink") or created.get("webContentLink") or build_drive_file_url(file_id)
+
+    return {
+      "id": file_id,
+      "name": created.get("name", filename),
+      "url": url,
+    }
   except HttpError as error:
-    # TODO(developer) - Handle errors from drive API.
-    print(f"An error occurred: {error}")
-
-
-if __name__ == "__main__":
-  main()
-# token_path = os.path.abspath(
-#         os.path.join(
-#           os.path.dirname(__file__), '../../token.json')
-#     )
-
-# OAUTH_REDIRECT_HOST = "localhost"
-# OAUTH_REDIRECT_PORT = int(os.getenv("GOOGLE_OAUTH_REDIRECT_PORT", "5000"))
-
-# # If modifying these scopes, delete the file token.json.
-# SCOPES = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
-
-
-# def main():
-#   """Shows basic usage of the Drive v3 API.
-#   Prints the names and ids of the first 10 files the user has access to.
-#   """
-#   creds = None
-#   # The file token.json stores the user's access and refresh tokens, and is
-#   # created automatically when the authorization flow completes for the first
-#   # time.
-#   if os.path.exists(token_path):
-#     creds = Credentials.from_authorized_user_file(token_path, SCOPES)
-#   # If there are no (valid) credentials available, let the user log in.
-#   if not creds or not creds.valid:
-#     if creds and creds.expired and creds.refresh_token:
-#       creds.refresh(Request())
-#     else:
-#       flow = InstalledAppFlow.from_client_secrets_file(
-#           rag_system_credentials, SCOPES
-#       )
-#       creds = flow.run_local_server(
-#           host=OAUTH_REDIRECT_HOST,
-#           port=OAUTH_REDIRECT_PORT,
-#       )
-#     # Save the credentials for the next run
-#     with open(token_path, "w", encoding="utf-8") as token:
-#       token.write(creds.to_json())
-
-#   try:
-#     service = build("drive", "v3", credentials=creds)
-
-#     # Call the Drive v3 API
-#     results = (
-#         service.files()
-#         .list(pageSize=10, fields="nextPageToken, files(id, name)")
-#         .execute()
-#     )
-#     items = results.get("files", [])
-
-#     if not items:
-#       print("No files found.")
-#       return
-#     print("Files:")
-#     for item in items:
-#       print(f"{item['name']} ({item['id']})")
-#   except HttpError as error:
-#     # TODO(developer) - Handle errors from drive API.
-#     print(f"An error occurred: {error}")
-
-
-# if __name__ == "__main__":
-#   main()
+    raise RuntimeError(f"Google Drive upload failed: {error}") from error

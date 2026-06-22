@@ -1,0 +1,1 @@
+from .thumbnail_config import THUMBNAIL_CONFIG, GENERIC_THUMBNAIL_COLORS
