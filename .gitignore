@@ -17,3 +17,6 @@ htmlcov/
 *.swo
 .env.local
 .env.*.local
+desktop_ragsystem.json
+rag_system_credentials.json
+token.json

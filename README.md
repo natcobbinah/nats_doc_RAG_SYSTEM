@@ -1,206 +1,214 @@
-# CV Evaluator - Job Application Optimizer
+# Nats Document RAG System
 
-A Flask rewrite of the job application optimizer with a glassmorphism UI, secure upload handling, and Heroku-friendly app factory pattern.
+Nats Document RAG System is a Flask-based Retrieval Augmented Generation stack that:
 
-## Features
+- extracts text and metadata from many document types,
+- generates BERT embeddings,
+- indexes documents in Chroma,
+- stores source files in Google Drive,
+- generates and stores thumbnails in Google Drive,
+- and serves a dashboard-style landing page for system overview.
 
-- 🤖 AI-powered CV evaluation using Groq LLM API
-- 📄 Match your CV against job descriptions
-- 🔒 Secure file upload handling
-- 🎨 Modern glassmorphism UI design
-- 📊 Real-time evaluation results
-- 🚀 Production-ready with Heroku deployment
-- 🛡️ Built-in security headers and CSRF protection
-- 📉 Rate limiting per IP address
+## Current Scope
+
+- Multi-format document extraction under `app/skills/text_extraction`
+- Preprocessing and language-aware token cleaning using NLTK
+- Embedding generation using `bert-base-uncased` from Hugging Face Transformers
+- Chroma vector collection with cosine similarity retrieval
+- Google Drive upload service for source files
+- Google Drive upload service for generated thumbnails
+- Flask app-factory structure with blueprint-based routes
+
+## Architecture
+
+### 1) Web App Layer
+
+- `wsgi.py` is the application entry point (`app = create_app()`)
+- `app/__init__.py` builds the Flask app, applies CSRF, registers blueprints, and injects security headers
+- `app/routes/routes.py` exposes:
+  - `GET /` (landing page)
+  - `GET /health` (health probe)
+
+### 2) Extraction Layer
+
+- `app/skills/text_extraction/router.py` dispatches by extension to extractor implementations
+- Supported extraction families include:
+  - PDF, Office, text, markdown, HTML/XML, archive formats, ebooks, and image OCR paths
+
+### 3) Embedding + Vector Store Layer
+
+- `app/services/generate_embeddings.py`
+  - preprocesses page content
+  - loads BERT tokenizer/model
+  - performs chunked embedding for long text
+- `app/services/embeddings_storage.py`
+  - persists embeddings/documents/metadata to Chroma
+  - includes metadata fields such as `url` and `thumbnail_url`
+  - supports semantic search via `search_documents_by_query`
+
+### 4) Drive Storage + Thumbnails
+
+- `app/services/google_drive_processor.py`
+  - authenticates with OAuth token flow
+  - creates folders on demand
+  - uploads bytes and returns shareable URLs
+- `app/services/thumbnail_generator.py`
+  - generates filetype-specific thumbnails:
+    - PDF via PyMuPDF
+    - image files via Pillow
+    - generic thumbnails for other formats
+  - uploads thumbnails to Google Drive and returns `thumbnail_url`
 
 ## Project Structure
 
-```
+```text
 nats_doc_rag_system/
 ├── app/
-│   ├── __init__.py           # Flask app factory
-│   ├── config.py             # Configuration management
-│   ├── extensions.py         # Flask extensions (CSRF)
-│   ├── logging_utils.py      # JSON logging setup
-│   ├── routes.py             # Route definitions
+│   ├── __init__.py
+│   ├── app_env_config.py
+│   ├── extensions.py
+│   ├── logging_utils.py
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   └── routes.py
+│   ├── services/
+│   │   ├── embeddings_storage.py
+│   │   ├── generate_embeddings.py
+│   │   ├── google_drive_processor.py
+│   │   ├── thumbnail_generator.py
+│   │   └── google_drive_folder_periodic_ingestion.py
+│   ├── skills/text_extraction/
+│   │   ├── router.py
+│   │   └── *_extractor.py
+│   ├── config/
+│   │   ├── __init__.py
+│   │   └── thumbnail_config.py
 │   ├── templates/
-│   │   └── index.html        # Home page template
-│   └── static/               # Static files (CSS, JS, images)
+│   │   └── index.html
+│   └── utils/
 ├── tests/
-│   ├── test_app.py          # App tests
-│   └── test_routes.py       # Route tests
-├── wsgi.py                   # WSGI entry point for deployment
-├── Procfile                  # Heroku process file
-├── runtime.txt              # Python version for Heroku
-├── requirements.txt         # Python dependencies
-├── settings_dev.py          # Development settings
-├── settings_prod.py         # Production settings
-├── pytest.ini               # Pytest configuration
-├── .env.example             # Environment variables template
-├── .gitignore              # Git ignore rules
-└── README.md               # This file
+├── wsgi.py
+├── requirements.txt
+├── desktop_ragsystem.json
+├── language_names.json
+└── README.md
 ```
 
-## Getting Started
+## Requirements
 
-### Prerequisites
+- Python 3.12+
+- Virtual environment recommended
+- Google API OAuth credentials file at project root:
+  - `desktop_ragsystem.json`
 
-- Python 3.12.9 or higher
-- pip and virtualenv
+## Setup
 
-### Local Development
+1. Create and activate virtual environment.
 
-1. **Clone and setup virtual environment:**
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate  # On Windows
-   # or source .venv/bin/activate  # On macOS/Linux
-   ```
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. Install dependencies.
 
-3. **Create `.env` file:**
-   ```bash
-   copy .env.example .env
-   ```
-   Edit `.env` with your values:
-   ```
-   FLASK_APP=wsgi.py
-   FLASK_ENV=development
-   FLASK_DEBUG=True
-   FLASK_SECRET=your-secret-key-here
-   GROQ_API_KEY=your-groq-api-key
-   GROQ_MODEL=mixtral-8x7b-32768
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-4. **Run the application:**
-   ```bash
-   flask run
-   ```
-   The app will be available at http://localhost:5000
+3. Set environment variables (example values).
 
-## Running Tests
+```bash
+set FLASK_APP=wsgi.py
+set FLASK_ENV=development
+set FLASK_DEBUG=1
+set FLASK_SECRET=change-me
+```
+
+4. Start the Flask app.
+
+```bash
+flask run
+```
+
+Health check:
+
+```bash
+curl http://127.0.0.1:5000/health
+```
+
+## Running the Extraction + RAG Flow (local script)
+
+The script entry in `app/skills/text_extraction/router.py` demonstrates end-to-end flow:
+
+1. extract text and metadata
+2. preprocess and embed
+3. upload source file to Drive
+4. generate and upload thumbnail
+5. store vectors and metadata in Chroma
+6. query indexed data
+
+Run from the text extraction directory:
+
+```bash
+cd app\skills\text_extraction
+python router.py
+```
+
+Expected local outputs:
+
+- `combined_docs.json`
+- `results_search.json`
+
+## Core Metadata Stored per Document
+
+- `source_filename`
+- `title`
+- `author`
+- `creation_date`
+- `modification_date`
+- `total_pages`
+- `file_extension`
+- `url`
+- `thumbnail_url`
+- `language` (when detected)
+
+## Testing
 
 ```bash
 pytest
 ```
 
-To run with coverage:
-```bash
-pytest --cov=app tests/
-```
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `FLASK_SECRET` | ✅ Yes | None | Flask secret key (generate with `python -c 'import secrets; print(secrets.token_hex(32))'`) |
-| `GROQ_API_KEY` | ✅ Yes | None | API key from Groq console |
-| `GROQ_MODEL` | ❌ No | `mixtral-8x7b-32768` | Groq model to use |
-| `FLASK_DEBUG` | ❌ No | False | Enable debug mode |
-| `FLASK_ENV` | ❌ No | development | Flask environment |
-
-## Deploying to Heroku
-
-1. **Create a Heroku app:**
-   ```bash
-   heroku create your-app-name
-   ```
-
-2. **Set environment variables:**
-   ```bash
-   heroku config:set FLASK_SECRET=$(python -c 'import secrets; print(secrets.token_hex(32))')
-   heroku config:set GROQ_API_KEY=your-groq-api-key
-   ```
-
-3. **Deploy:**
-   ```bash
-   git push heroku main
-   ```
-
-4. **View logs:**
-   ```bash
-   heroku logs --tail
-   ```
-
-5. **Check health:**
-   ```bash
-   curl https://your-app-name.herokuapp.com/health
-   ```
-
-## Application Architecture
-
-### Flask App Factory Pattern
-The app uses the application factory pattern for better modularity and testability:
-- `app/__init__.py`: Creates and configures the Flask app
-- `app/config.py`: Configuration classes for different environments
-- `app/extensions.py`: Flask extensions initialization
-- `app/routes.py`: Route definitions
-
-### Security Features
-- **CSRF Protection**: Flask-WTF CSRF token validation
-- **Security Headers**: X-Content-Type-Options, X-Frame-Options, Content-Security-Policy, etc.
-- **Rate Limiting**: Per-IP rate limiting (100 requests per 60 seconds)
-- **JSON Logging**: Structured logging for better observability
-
-### Rate Limiting
-The app implements per-IP rate limiting:
-- **Window**: 60 seconds
-- **Max Requests**: 100 per IP per window
-- Returns 429 (Too Many Requests) when limit exceeded
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Home page with UI |
-| `/health` | GET | Health check endpoint (returns JSON) |
-
-## Development Workflow
-
-1. Create a feature branch
-2. Make changes and test locally
-3. Run tests: `pytest`
-4. Commit changes
-5. Push to GitHub
-6. Heroku auto-deploys from `main` branch (if connected)
+Note: existing tests are from an earlier app version and may need alignment with the current Nats RAG landing page text.
 
 ## Troubleshooting
 
-### "Too many requests" error
-The app has rate limiting enabled. If you're getting 429 errors:
-- Wait 60 seconds for the rate limit window to reset
-- Or increase `RATE_LIMIT_MAX_REQUESTS` in `app/config.py`
+### ImportError while importing wsgi
 
-### Missing environment variables
-- Ensure `.env` file exists with all required variables
-- Check: `FLASK_SECRET` and `GROQ_API_KEY` must be set
+If you see an import failure when running plain `python`, ensure you are using the project venv interpreter:
 
-### Tests failing
-- Make sure virtualenv is activated
-- Run `pip install -r requirements.txt`
-- Use `pytest -v` for verbose output
+```bash
+.venv\Scripts\python -c "import wsgi; print('wsgi import ok')"
+```
 
-## Performance Notes
+On Windows, `python` may resolve to the Microsoft Store alias if the venv is not active.
 
-- **Gunicorn Workers**: Default is auto (2 × CPU + 1)
-- **Dyno Type**: Works with Heroku's free and paid dynos
-- **Memory**: ~512MB typical usage
+### Google Drive authentication/upload issues
 
-## Related Links
+- Ensure `desktop_ragsystem.json` exists at repository root
+- First run may open OAuth consent flow and create `app/services/token.json`
+- Confirm Drive scope is enabled in credentials
 
-- [Flask Documentation](https://flask.palletsprojects.com/)
-- [Groq API Docs](https://console.groq.com/docs)
-- [Heroku Python Guide](https://devcenter.heroku.com/articles/python-support)
-- [WSGI Standard](https://www.python.org/dev/peps/pep-3333/)
+### Missing thumbnails in metadata
+
+- Verify file extension is supported in `app/config/thumbnail_config.py`
+- Verify thumbnail upload folder permissions in Google Drive
+
+## Deployment Notes
+
+- `wsgi.py`, `Procfile`, and `runtime.txt` are present for process-based deployment targets
+- Keep secrets and OAuth credentials out of source control
 
 ## License
 
-MIT License - See LICENSE file for details
-
-## Author
-
-Nathaniel Cobbinah - [GitHub](https://github.com/natcobbinah)
+MIT
