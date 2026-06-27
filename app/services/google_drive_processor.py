@@ -1,6 +1,7 @@
 import io
 import os
-from typing import Dict
+import mimetypes
+from typing import Dict, Optional
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -73,7 +74,7 @@ def upload_bytes_to_drive(
   *,
   file_bytes: bytes,
   filename: str,
-  mime_type: str,
+  mime_type: Optional[str],
   folder_name: str,
 ) -> Dict[str, str]:
   try:
@@ -113,3 +114,5 @@ def upload_bytes_to_drive(
     }
   except HttpError as error:
     raise RuntimeError(f"Google Drive upload failed: {error}") from error
+  
+

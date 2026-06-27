@@ -13,6 +13,7 @@ DOCUMENT_METADATA_FIELDS = (
     "total_pages",
     "file_extension",
     "url",
+    "thumbnail_url"
 )
 
 class ProcessedDocumentPayload(TypedDict, total=False):
@@ -76,7 +77,7 @@ def _build_document_metadata(processed_result: ProcessedDocumentPayload) -> Dict
     first_page = processed_pages[0] if processed_pages else {}
 
     metadata = {
-        field: first_page.get(field, "")
+        field: processed_result.get(field, first_page.get(field, ""))
         for field in DOCUMENT_METADATA_FIELDS
     }
 

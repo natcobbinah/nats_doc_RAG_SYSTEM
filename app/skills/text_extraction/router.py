@@ -28,14 +28,19 @@ from xps_extractor import TextFromXps
 from zip_extractor import TextFromZipArchive
 from app.services.generate_embeddings import preprocess_incoming_data, get_embedding
 from app.services.embeddings_storage import store_processed_documents, search_documents_by_query
+from app.services.google_drive_processor import upload_bytes_to_drive
+from app.services.thumbnail_generator import ThumbnailGenerator
+
 
 from typing import List, Dict 
 import psutil
 if __package__:
     from ...logging_utils import LogLevel, configure_json_logging, log
+    from ...utils import get_mimetype, extract_filename
 else:
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
     from app.logging_utils import LogLevel, configure_json_logging, log
+    from app.utils import get_mimetype, extract_filename
 
 
 configure_json_logging()
@@ -153,20 +158,51 @@ if __name__ == "__main__":
         "examples/diapo.pptx",
     ]
 
+    thumbnail_generator = ThumbnailGenerator()
+
     for doc_file_path in documents:
         dummy_file_path = os.path.join(os.path.dirname(__file__), doc_file_path)
         with open(dummy_file_path, "rb") as file_stream:
+            file_bytes = file_stream.read()
             result = extract_text_and_metadata(
-                stream=io.BytesIO(file_stream.read()),
-                blob_name=doc_file_path.split("/")[1],
+                stream=io.BytesIO(file_bytes),
+                blob_name=extract_filename(doc_file_path),
                 source_url=""
             )
 
+            # preprocess incoming data
             preprocessed_results= preprocess_incoming_data(result)
 
+            # generating embeddings of preporocessed incoming data 
             embeddings = get_embedding(preprocessed_results)
 
+            # extend preprocessed data to including processed embedding values
             preprocessed_results.update({"embeddings": embeddings.tolist()})
+            
+            # store file in google drive folder so it can be previewed in the frontend by accessing its url
+            upload_to_drive_response = upload_bytes_to_drive(
+                file_bytes=file_bytes,
+                filename=extract_filename(doc_file_path),
+                mime_type=get_mimetype(doc_file_path),
+                folder_name="RAG_documents"
+            )
+
+            # update the url field of the preprocessed data
+            if not upload_to_drive_response:
+                print("failed to upload to google drive")
+            else:
+                generated_url_after_upload_to_drive = upload_to_drive_response.get('url')
+                preprocessed_results.update({"url": generated_url_after_upload_to_drive})
+
+                # generate and upload a thumbnail for the uploaded document
+                thumbnail_url = thumbnail_generator.generate_thumbnail(
+                    file_content=file_bytes,
+                    document_id=upload_to_drive_response.get("id", ""),
+                    filename=extract_filename(doc_file_path),
+                )
+
+                if thumbnail_url:
+                    preprocessed_results.update({"thumbnail_url": thumbnail_url})
 
             # store in vector database
             store_processed_documents(preprocessed_results)

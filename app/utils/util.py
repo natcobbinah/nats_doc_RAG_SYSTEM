@@ -1,4 +1,6 @@
 import re
+import mimetypes
+import os
 
 def sanitize_and_standardize_doc_id(doc_id: str) -> str:
     """
@@ -29,3 +31,17 @@ def sanitize_and_standardize_doc_id(doc_id: str) -> str:
         sanitized = sanitized[:512] + "_" + sanitized[-511:]
     
     return sanitized
+
+def get_mimetype(filename) -> str:
+    guessed_mime_type, _ = mimetypes.guess_type(filename, strict=True)
+    return guessed_mime_type or "application/octet-stream"
+
+
+def extract_filename(file_path: str) -> str:
+    """
+    Extract a file name from a path using os.path utilities.
+    """
+    if not file_path:
+        return ""
+
+    return os.path.basename(os.path.normpath(file_path))
