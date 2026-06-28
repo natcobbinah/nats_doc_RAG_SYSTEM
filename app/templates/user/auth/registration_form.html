@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5 h-100">
+    <div class="row d-flex align-items-center justify-content-center">
+        <div class="col-md-12 col-lg-5 col-xl-5 offset-xl-1">
+            <form method="POST" action="{{url_for('auth_route.register')}}">
+                {{ form.csrf_token }}
+
+                <!-- Username input -->
+                <div class="form-outline mb-2">
+                    {{ form.username.label(class="mb-2") }}
+                    {{ form.username(class="form-control form-control-lg") }}
+                    {% for error in form.username.errors %}
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Email input -->
+                <div class="form-outline mb-2">
+                    {{ form.email.label(class="mb-2") }}
+                    {{ form.email(class="form-control form-control-lg") }}
+                    {% for error in form.email.errors %}
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Password input -->
+                <div class="form-outline mb-2">
+                    {{ form.password.label(class="mb-2") }}
+                    {{ form.password(class="form-control form-control-lg") }}
+                    {% for error in form.password.errors %}
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Confirm Password input -->
+                <div class="form-outline mb-2">
+                    {{ form.confirm_password.label(class="mb-2") }}
+                    {{ form.confirm_password(class="form-control form-control-lg") }}
+                    {% for error in form.confirm_password.errors %}
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!--user role selection -->
+                <div class="form-outline mb-2">
+                    {{ form.role.label(class="mb-2") }}
+                    {{ form.role(class="form-control form-control-lg") }}
+                    {% for error in form.role.errors %} 
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- account activation method selection -->
+                <div class="form-outline mb-2">
+                    {{ form.activate_user_account_by.label(class="mb-2") }}
+                    {{ form.activate_user_account_by(class="form-control form-control-lg") }}
+                    {% for error in form.activate_user_account_by.errors %} 
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!--phone number input -->
+                <div class="form-outline mb-2">
+                    {{ form.user_phone_number.label(class="mb-2") }}
+                    {{ form.user_phone_number(class="form-control form-control-lg") }}
+                    {% for error in form.user_phone_number.errors %}
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Submit button -->
+                {{ form.submit(class="btn btn-primary w-100")}}
+
+                <hr />
+
+                <!-- Create account if user does not have an account -->
+                <div class="form-hint">
+                    <p>Already have an account? <span class="me-2 fw-bold"><a
+                                href="{{url_for('auth_route.login')}}">Login</a></span></p>
+                </div>
+
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

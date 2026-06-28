@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nats RAG System | Search Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
+</head>
+<body class="app-page results-page">
+    <header class="app-header">
+        <div class="brand-block">
+            <a class="brand-mark" href="{{ url_for('main.index') }}">Nats RAG</a>
+            <div>
+                <p class="brand-caption">Search results workspace</p>
+                <p class="brand-subcaption">Side navigation, ranked results, and in-browser preview</p>
+            </div>
+        </div>
+
+        <nav class="header-actions" aria-label="User account actions">
+            <a class="ghost-action" href="{{ url_for('main.index') }}">Home</a>
+            {% if auth_user %}
+                <a class="ghost-action" href="{{ url_for('main.profile') }}">{{ auth_user.name }}</a>
+                <a class="solid-action" href="{{ url_for('main.logout') }}">Logout</a>
+            {% else %}
+                <a class="ghost-action" href="{{ url_for('main.auth_entry', flow='login') }}">Login</a>
+                <a class="solid-action" href="{{ url_for('main.auth_entry', flow='register') }}">Register</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="page-shell results-shell">
+        <aside class="side-panel left-panel" aria-label="Search controls">
+            <p class="section-kicker">Search</p>
+            <form class="search-form compact-search" action="{{ url_for('main.search_result') }}" method="get">
+                <label class="screen-reader-only" for="results-search">Search query</label>
+                <input id="results-search" name="q" type="search" class="search-input" value="{{ query_text }}" placeholder="Refine query" required>
+                <button class="search-submit" type="submit">Search</button>
+                <button class="voice-search" type="button" data-voice-search aria-label="Start voice search"><span>Voice</span></button>
+            </form>
+
+            <div class="summary-block">
+                <span class="summary-label">Current query</span>
+                <strong>{{ query_text or 'Enter a query to start retrieval' }}</strong>
+            </div>
+
+            <div class="summary-block">
+                <span class="summary-label">Page window</span>
+                <strong>{{ page }}</strong>
+                <small>15 results per request window</small>
+            </div>
+        </aside>
+
+        <section class="results-column" aria-label="Ranked search results">
+            <header class="results-header">
+                <div>
+                    <p class="section-kicker">Retrieved Items</p>
+                    <h1>Search Results</h1>
+                </div>
+                {% if query_text %}
+                    <span class="results-badge">{{ results|length }} items on this page</span>
+                {% endif %}
+            </header>
+
+            {% if results %}
+                <div class="results-list">
+                    {% for result in results %}
+                        <a
+                            class="result-card {% if selected_result and selected_result.id == result.id %}selected{% endif %}"
+                            href="{{ url_for('main.search_result', q=query_text, page=page, selected=result.id) }}"
+                        >
+                            <div class="result-card-header">
+                                <h2>{{ result.title }}</h2>
+                                <span class="file-chip">{{ result.file_extension or 'doc' }}</span>
+                            </div>
+                            <p>{{ result.snippet }}</p>
+                            <div class="result-meta">
+                                <span>{{ result.source_filename }}</span>
+                                {% if result.language %}<span>{{ result.language }}</span>{% endif %}
+                                {% if result.total_pages %}<span>{{ result.total_pages }} pages</span>{% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <div class="results-pagination">
+                    {% if page > 1 %}
+                        <a class="ghost-action" href="{{ url_for('main.search_result', q=query_text, page=page - 1) }}">Previous</a>
+                    {% endif %}
+                    {% if has_next_page %}
+                        <a class="down-arrow-link" href="{{ url_for('main.search_result', q=query_text, page=page + 1) }}" aria-label="Load next 15 results">
+                            <span>&#8595;</span>
+                            <small>Load next records</small>
+                        </a>
+                    {% endif %}
+                </div>
+            {% elif query_text %}
+                <div class="empty-state">
+                    <h2>No results returned</h2>
+                    <p>Try a broader phrase or search with one of the indexed document titles.</p>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h2>Start a query</h2>
+                    <p>The result workspace will populate after a text or voice search from the homepage or this form.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <aside class="side-panel preview-panel" aria-label="Selected document preview">
+            <p class="section-kicker">Preview</p>
+            {% if selected_result %}
+                <h2 class="preview-title">{{ selected_result.title }}</h2>
+                <div class="preview-surface">
+                    {% if selected_result.preview_url and selected_result.file_extension in ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'] %}
+                        {% if selected_result.file_extension == 'pdf' %}
+                            <iframe class="preview-frame" src="{{ selected_result.preview_url }}"></iframe>
+                        {% else %}
+                            <img class="preview-image" src="{{ selected_result.preview_url }}" alt="Preview for {{ selected_result.title }}">
+                        {% endif %}
+                    {% elif selected_result.thumbnail_url %}
+                        <img class="preview-image" src="{{ selected_result.thumbnail_url }}" alt="Thumbnail for {{ selected_result.title }}">
+                    {% else %}
+                        <div class="preview-fallback">
+                            <p>Browser preview is not available for this document type in the current workspace.</p>
+                            <p class="preview-snippet">{{ selected_result.snippet }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <dl class="preview-details">
+                    <div>
+                        <dt>File</dt>
+                        <dd>{{ selected_result.source_filename }}</dd>
+                    </div>
+                    <div>
+                        <dt>Type</dt>
+                        <dd>{{ selected_result.file_extension or 'unknown' }}</dd>
+                    </div>
+                    {% if selected_result.preview_url %}
+                        <div>
+                            <dt>Preview URL</dt>
+                            <dd><a href="{{ selected_result.preview_url }}" target="_blank" rel="noreferrer">Open source document</a></dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            {% else %}
+                <div class="empty-state preview-empty">
+                    <h2>No document selected</h2>
+                    <p>Select a result in the middle column to populate the preview pane.</p>
+                </div>
+            {% endif %}
+        </aside>
+    </main>
+
+    <footer class="app-footer">
+        <span>Nats RAG System</span>
+        <span>Paginated retrieval backed by the current Flask search service</span>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app_shell.js') }}"></script>
+</body>
+</html>

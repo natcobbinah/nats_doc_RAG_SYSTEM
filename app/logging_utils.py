@@ -39,7 +39,6 @@ def log(*, type: LogLevel, message: any):
             "custom_dimensions": custom_dimensions
         }
     
-
     if type == LogLevel.DEBUG:
         logger.debug(message, extra=custom_dimensions_extras)
     elif type == LogLevel.INFO:

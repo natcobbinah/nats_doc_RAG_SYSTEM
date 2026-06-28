@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5 h-100">
+    <div class="row d-flex align-items-center justify-content-center">
+        <div class="col-md-12 col-lg-5 col-xl-5 offset-xl-1">
+            <form method="POST" action="{{url_for('auth_route.sms_verification')}}">
+                {{ form.csrf_token }}
+
+                <!--Phone Number-->
+                <!--populate phone_number field with value from backend-->
+                <div class="form-outline mb-2">
+                    {{ form.phone_number.label(class="mb-2") }}
+                    {{ form.phone_number(class="form-control form-control-lg", 
+                        value=user_phone_number) }}
+                    {% for error in form.phone_number.errors %}
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- SMS Code input -->
+                <div class="form-outline mb-2">
+                    {{ form.sms_code.label(class="mb-2") }}
+                    {{ form.sms_code(class="form-control form-control-lg") }}
+                    {% for error in form.sms_code.errors %}
+                    <div class="invalid-feedback">
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Submit button -->
+                {{ form.submit(class="btn btn-primary w-100")}}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

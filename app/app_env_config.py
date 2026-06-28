@@ -1,8 +1,12 @@
 import os
-from environs import Env
+try:
+    from environs import Env
+except ModuleNotFoundError:
+    Env = None
 
-env = Env()
-env.read_env()
+if Env is not None:
+    env = Env()
+    env.read_env()
 
 
 class Config:

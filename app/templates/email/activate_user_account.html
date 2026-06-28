@@ -1,0 +1,15 @@
+<p>Dear {{ user.user_name }}</p>
+<p>
+Thank you for registering with us, and trying out flask-oauth-otp-demo application.
+To activate your user account
+<a href="{{ url_for('auth_route.activate_user_account', token=token, _external=True) }}">
+click here
+</a>.
+</p>
+{% if provided_password %}
+<p>Default password is {{ provided_password }}</p>
+{% endif %}
+<p> Alternatively, you can paste the following link in your browser's address bar</p>
+<p>{{ url_for('auth_route.activate_user_account', token=token, _external=True) }}</p>
+<p>Sincerely,</p>
+<p>Nats Document RAG System</p>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler-socials.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital@0;1&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+
+    <title>{% block title %}{% endblock title %} - Nats Doc Rag System</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/homepage.css')}}">
+    {{ font_awesome.load_js() }}
+
+    {% block css %}
+    {% endblock %}
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+    {% include 'includes/header.html' %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    {% if category == 'success'%}
+    <div class="alert alert-success" role="alert">
+        <div class="alert-icon">
+            <!-- Download SVG icon from http://tabler.io/icons/icon/check -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon alert-icon icon-2">
+                <path d="M5 12l5 5l10 -10" />
+            </svg>
+        </div>
+        <div>
+            <h4 class="alert-heading">Message</h4>
+            <div class="alert-description">
+                {{ message }}
+            </div>
+        </div>
+        <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+    </div>
+
+    {% elif category == 'info'%}
+    <div class="alert alert-info" role="alert">
+        <div class="alert-icon">
+            <!-- Download SVG icon from http://tabler.io/icons/icon/info-circle -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon alert-icon icon-2">
+                <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+                <path d="M12 9h.01" />
+                <path d="M11 12h1v4h1" />
+            </svg>
+        </div>
+        <div>
+            <h4 class="alert-heading">Message</h4>
+            <div class="alert-description">
+                {{ message }}
+            </div>
+        </div>
+        <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+    </div>
+    {% elif category == 'error'%}
+    <div class="alert alert-danger" role="alert">
+        <div class="alert-icon">
+            <!-- Download SVG icon from http://tabler.io/icons/icon/alert-circle -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon alert-icon icon-2">
+                <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+                <path d="M12 8v4" />
+                <path d="M12 16h.01" />
+            </svg>
+        </div>
+        <div>
+            <h4 class="alert-heading">Message</h4>
+            <div class="alert-description">
+                {{ message }}
+            </div>
+        </div>
+        <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+    </div>
+    {% endif %}
+
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div id="main">
+        {% block content %}
+        {% endblock content %}
+    </div>
+
+    {% include 'includes/footer.html' %}
+
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js">
+    </script>
+
+</body>
+
+</html>

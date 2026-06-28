@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 from app import create_app
-from app.config import TestingConfig
+from app.app_env_config import TestingConfig
 
 
 @pytest.fixture

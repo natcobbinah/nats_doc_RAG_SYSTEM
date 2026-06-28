@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nats RAG System | Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
+</head>
+<body class="app-page profile-page">
+    <header class="app-header">
+        <div class="brand-block">
+            <a class="brand-mark" href="{{ url_for('main.index') }}">Nats RAG</a>
+            <div>
+                <p class="brand-caption">User profile</p>
+                <p class="brand-subcaption">Current signed-in provider and workspace shortcuts</p>
+            </div>
+        </div>
+        <nav class="header-actions" aria-label="Profile navigation">
+            <a class="ghost-action" href="{{ url_for('main.index') }}">Home</a>
+            <a class="solid-action" href="{{ url_for('main.logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <main class="page-shell profile-shell">
+        <section class="profile-card">
+            <p class="section-kicker">Account</p>
+            <h1>{{ auth_user.name }}</h1>
+            <dl class="preview-details profile-details">
+                <div>
+                    <dt>Email</dt>
+                    <dd>{{ auth_user.email }}</dd>
+                </div>
+                <div>
+                    <dt>Provider</dt>
+                    <dd>{{ auth_user.provider }}</dd>
+                </div>
+                <div>
+                    <dt>Entry Flow</dt>
+                    <dd>{{ auth_user.flow|title }}</dd>
+                </div>
+            </dl>
+            <a class="solid-action profile-cta" href="{{ url_for('main.index') }}">Return to search</a>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <span>Nats RAG System</span>
+        <span>Authenticated workspace shell</span>
+    </footer>
+</body>
+</html>

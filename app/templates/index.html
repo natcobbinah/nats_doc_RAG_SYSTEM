@@ -3,6 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nats RAG System | Search Workspace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
+</head>
+<body class="app-page home-page">
+    <header class="app-header">
+        <div class="brand-block">
+            <a class="brand-mark" href="{{ url_for('main.index') }}">Nats RAG</a>
+            <div>
+                <p class="brand-caption">Document retrieval and preview workspace</p>
+                <p class="brand-subcaption">Semantic search, indexed collections, and browser-ready previews</p>
+            </div>
+        </div>
+
+        <nav class="header-actions" aria-label="User account actions">
+            {% if auth_user %}
+                <a class="ghost-action" href="{{ url_for('main.profile') }}">{{ auth_user.name }}</a>
+                <a class="solid-action" href="{{ url_for('main.logout') }}">Logout</a>
+            {% else %}
+                <a class="ghost-action" href="{{ url_for('main.auth_entry', flow='login') }}">Login</a>
+                <a class="solid-action" href="{{ url_for('main.auth_entry', flow='register') }}">Register</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="page-shell home-shell">
+        <section class="hero-panel">
+            <p class="section-kicker">Unified Retrieval</p>
+            <h1>Search your indexed documents from one centered workspace.</h1>
+            <p class="hero-copy">
+                Launch text or voice search from the homepage, keep recent activity in view, and move directly into the
+                result workspace for document preview.
+            </p>
+
+            <form class="search-form" action="{{ url_for('main.search_result') }}" method="get">
+                <label class="screen-reader-only" for="homepage-search">Search the document workspace</label>
+                <input
+                    id="homepage-search"
+                    name="q"
+                    type="search"
+                    class="search-input"
+                    placeholder="Search by topic, filename, policy, or phrase"
+                    autocomplete="off"
+                    required
+                >
+                <button class="search-submit" type="submit">Search</button>
+                <button class="voice-search" type="button" data-voice-search aria-label="Start voice search">
+                    <span>Voice</span>
+                </button>
+            </form>
+
+            <div class="provider-strip" aria-label="Available sign in methods">
+                {% for provider in auth_providers %}
+                    <a class="provider-pill" href="{{ url_for('main.auth_provider', provider=provider.id, flow='login') }}">
+                        <span>{{ provider.label }}</span>
+                        <small>{{ provider.description }}</small>
+                    </a>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="cards-grid" aria-label="Recent activity panels">
+            {% for section in home_sections %}
+                <article class="activity-card" data-card>
+                    <header class="card-header">
+                        <h2>{{ section['title'] }}</h2>
+                        <div class="card-nav">
+                            <button type="button" class="card-arrow" data-card-prev aria-label="Previous {{ section['title'] }} items">&#8592;</button>
+                            <button type="button" class="card-arrow" data-card-next aria-label="Next {{ section['title'] }} items">&#8594;</button>
+                        </div>
+                    </header>
+                    <ul class="card-list" data-card-list>
+                        {% for item in section['items'] %}
+                            <li class="card-list-item">{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </article>
+            {% endfor %}
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <span>Nats RAG System</span>
+        <span>Vector search, document previews, and provider-based sign in flow</span>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app_shell.js') }}"></script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nats RAG System - Retrieval Augmented Generation</title>
     <link rel="stylesheet" href="{{url_for('static', filename='css/homepage.css')}}">
 </head>

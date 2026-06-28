@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5 h-100">
+    <div class="row d-flex align-items-center justify-content-center">
+        <div class="col-md-12 col-lg-5 col-xl-5 offset-xl-1">
+            <form method="POST" action="{{url_for('auth_route.login')}}">
+                {{ form.csrf_token }}
+
+                <!-- Email input -->
+                <div class="form-outline mb-4">
+                    {{ form.email.label(class="mb-2") }}
+                    {{ form.email(class="form-control form-control-lg") }}
+                    {% for error in form.email.errors %}
+                    <div class="invalid-feedback">
+                        {{ error }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Password input -->
+                <div class="form-outline mb-4">
+                    {{ form.password.label(class="mb-2") }}
+                    {{ form.password(class="form-control form-control-lg") }}
+                    {% for error in form.password.errors %}
+                    <div class="invalid-feedback">
+                        {{ error }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Remember Me field -->
+                <div class="form-outline mb-4">
+                    {{ form.remember_me() }}
+                    {{ form.remember_me.label }}
+                </div>
+
+
+                <!-- Incase of invalid email/password -->
+                {% if error %}
+                <div class="form-hint mb-2 text-danger">{{error}}</div>
+                {% endif %}
+
+                <!-- Submit button -->
+                {{ form.submit(class="btn btn-primary w-100")}}
+
+                <hr />
+
+                <!-- Create account if user does not have an account -->
+                <div class="form-hint">
+                    <p>No account yet?<span class="me-2 fw-bold"><a href="{{url_for('auth_route.register')}}">Create an
+                                account</a></span></p>
+
+                    <p>Forgot Your Password? <span class="me-2 fw-bold"><a
+                                href="{{url_for('auth_route.reset_password_request')}}">Reset Password</a></span></p>
+                </div>
+
+                <div class="hr-text hr-text-center">
+                    <span>OR</span>
+                </div>
+
+                <a class="btn btn-primary w-100  mb-2" style="background-color: #DB4437"
+                    href="{{url_for('google_auth_route.login')}}" role="button">
+                    <i class="social social-app-google me-2"></i>Login/SignUp With Google
+                </a>
+                <a class="btn btn-primary w-100  mb-2" style="background-color: #160a0aff"
+                    href="{{url_for('twitter_auth_route.login')}}" role="button">
+                    <i class="social social-app-x me-2"></i>Login/SignUp With X
+                </a>
+                <a class="btn btn-primary w-100 mb-2" style="background-color: #24292e"
+                    href="{{url_for('github_auth_route.login')}}" role="button">
+                    <i class="social social-app-github me-2  mb-2"></i>Login/SignUp With Github
+                </a>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

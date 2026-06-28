@@ -9,7 +9,13 @@ def test_index_route_returns_200(client):
 
 
 def test_index_contains_title(client):
-    """Test index page contains CV Evaluator title"""
+    """Test index page contains landing page content"""
     response = client.get("/")
-    assert b"CV Evaluator" in response.data
-    assert b"Job Application Optimizer" in response.data
+    assert b"Nats RAG System" in response.data
+    assert b"Recent Documents" in response.data
+
+
+def test_profile_redirects_when_not_authenticated(client):
+    """Profile should require authentication"""
+    response = client.get("/profile")
+    assert response.status_code == 302

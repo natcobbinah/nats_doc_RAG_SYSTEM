@@ -12,7 +12,8 @@ def test_home_page(client):
     """Test home page loads"""
     response = client.get("/")
     assert response.status_code == 200
-    assert b"CV Evaluator" in response.data
+    assert b"Nats RAG System" in response.data
+    assert b"Search your indexed documents" in response.data
 
 
 def test_health_check(client):
@@ -34,3 +35,10 @@ def test_security_headers(client):
     assert "X-Content-Type-Options" in response.headers
     assert "X-Frame-Options" in response.headers
     assert "Content-Security-Policy" in response.headers
+
+
+def test_search_results_page(client):
+    """Test search result page loads for a query"""
+    response = client.get("/search-result?q=policy")
+    assert response.status_code == 200
+    assert b"Search Results" in response.data

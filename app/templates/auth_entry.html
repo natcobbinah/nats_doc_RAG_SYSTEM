@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nats RAG System | {{ auth_flow|title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
+</head>
+<body class="app-page auth-page">
+    <header class="app-header">
+        <div class="brand-block">
+            <a class="brand-mark" href="{{ url_for('main.index') }}">Nats RAG</a>
+            <div>
+                <p class="brand-caption">{{ auth_flow|title }} to the workspace</p>
+                <p class="brand-subcaption">Provider options aligned with the external OAuth and OTP reference app</p>
+            </div>
+        </div>
+        <nav class="header-actions" aria-label="Global navigation">
+            <a class="ghost-action" href="{{ url_for('main.index') }}">Home</a>
+        </nav>
+    </header>
+
+    <main class="page-shell auth-shell">
+        <section class="auth-panel">
+            <p class="section-kicker">Provider Selection</p>
+            <h1>{{ auth_flow|title }} with your preferred method</h1>
+            <p class="hero-copy">Choose from OAuth providers or the SMS OTP path and the workspace will create a local signed-in session.</p>
+            <div class="provider-grid">
+                {% for provider in auth_providers %}
+                    <a class="provider-card" href="{{ url_for('main.auth_provider', provider=provider.id, flow=auth_flow) }}">
+                        <strong>{{ provider.label }}</strong>
+                        <span>{{ provider.description }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <span>Nats RAG System</span>
+        <span>Login, register, profile, and logout controls are available from the header</span>
+    </footer>
+</body>
+</html>
